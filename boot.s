@@ -3,10 +3,22 @@
 
 _start:
 .code16
-	xorw	%ax, %ax
-	movw	%ax, %ds
-	movw	%ax, %ss
-	movw	%ax, %fs
+	cli
+	xorl	%eax, %eax
+	movl	%eax, %ebx
+	movl	%eax, %ecx
+	movl	%eax, %edx
+	movl	%eax, %ebp
+	movl	%eax, %edi
+	movl	%eax, %esi
+	movl	%eax, %esp
+	movl	%eax, %ds
+	movl	%eax, %es
+	movl	%eax, %fs
+	movl	%eax, %gs
+	movl	%eax, %ss
+	#nao muda cs pq é o program counter
+	sti
 	jmp		start
 
 init_msg:
