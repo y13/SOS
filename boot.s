@@ -14,11 +14,14 @@ _start:
 	movl	%eax, %gs
 	movl	%eax, %ss
 	sti
-	jmp		loop
+	jmp		start
 
-loop:	
+start:
 	nop
-	jmp		loop
+	jmp		halt
 
-. = _start + 510
+halt:	
+	jmp		halt
+	
+. = _start + 510	#"magic number" para entender que é um codigo de BIOS
 .byte	0x55, 0xAA
