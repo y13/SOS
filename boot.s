@@ -17,7 +17,17 @@ _start:
 	jmp		start
 
 start:
-	nop
+	movb	$' ', %al
+	movb	$0x07, %ah
+
+	movl	$0xB8000, %ebx
+	movl	$0xB8FA0, %ecx
+	loop_clean:
+		movw	%ax, (%ebx)
+		addl	$2, %ebx
+		cmpl	%ebx, %ecx
+		jne	loop_clean
+		
 	jmp		halt
 
 halt:	
