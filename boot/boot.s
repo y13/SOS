@@ -18,7 +18,6 @@ _start:
 
 start:
 	nop
-
 	jmp		halt
 
 halt:	
