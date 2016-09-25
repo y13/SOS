@@ -22,5 +22,5 @@ start:
 loop:
 	jmp	loop
 
-. = _start + 510	#"magic number" para entender que é um codigo de BIOS
+. = _start + 510
 .byte	0x55, 0xAA
