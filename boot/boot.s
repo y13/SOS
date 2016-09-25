@@ -49,18 +49,6 @@ clear_screen:
 	ret
 
 start:
-	movb	$'X', %al
-	movb	$0x07, %ah
-
-	movl	$0xB8000, %ebx
-	movl	$0xB8FA0, %ecx
-	loop_clean:
-		movw	%ax, (%ebx)
-		addl	$2, %ebx
-		cmpl	%ebx, %ecx
-		jne	loop_clean
-
-
 	loop_read_write:
 		movb	$0x00, %ah
 		int 	$0x16
