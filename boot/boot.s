@@ -50,8 +50,77 @@ clear_screen:
 	pop 	%ebp
 	ret
 
-.globl		print_string
-.type		print_string, @function
+.globl	print_devices
+.type	print_devices, @function
+print_devices:
+	pushl	%ebp
+	movl	%esp, %ebp
+
+	int	$0x11
+
+	movl	%eax, -4(%ebp)
+
+
+	andl	$0x0002, %eax
+	cmp	$0, %eax
+	je	print_devices_no_num_cop
+
+	pushl	$dev_num_coprocessor
+	call	print_string
+	popl	%edx
+
+	pushl	$dev_msg_end
+	call	print_string
+	popl	%edx
+
+
+	print_devices_no_num_cop:
+
+	movl	-4(%ebp), %eax
+	andl	$0x0100, %eax
+	cmp	$0, %eax
+	je	print_devices_no_dma
+
+	pushl	$dev_dma
+	call	print_string
+	popl	%edx
+
+	pushl	$dev_msg_end
+	call	print_string
+	popl	%edx
+
+
+	print_devices_no_dma:
+
+	movl	-4(%ebp), %eax
+	andl	$0x000D, %eax # número de bancos de memórias
+	shr	$2, %eax
+
+	addb	$'0', %al
+	movb	$0xE, %ah
+	movb	$7, %bl
+
+	int	$0x10
+
+
+	pushl	$dev_memory
+	call	print_string
+	popl	%edx
+
+	pushl	$dev_msg_end
+	call	print_string
+	popl	%edx
+
+	pushl	$newline
+	call	print_string
+	popl	%edx
+
+	movl	%ebp, %esp
+	popl	%ebp
+	ret
+
+.globl	print_string
+.type	print_string, @function
 print_string:
 	#Proteger ebp
 	pushl	%ebp
@@ -95,6 +164,9 @@ start:
 		cmp	$'2', %al #Compara o caractere lido com '2'
 		je	string
 
+		cmp	$'3', %al
+		je	devices
+
 		movb	$0x0E, %ah #Codigo de impressao de caractere
 		int 	$0x10 #Codigo de interrupcao de tela
 		jmp	loop_read_write
@@ -113,6 +185,10 @@ start:
 			popl	%eax
 			jmp	loop_read_write
 
+		devices:
+			call	print_devices
+			jmp	loop_read_write
+
 	jmp	halt
 
 halt:	
@@ -124,6 +200,19 @@ newline:
 
 version_msg:
 	.asciz	"S.O.S - Superior Operating System 0.0.1\n\r"
+
+
+dev_memory:
+	.asciz	" x 64K RAM banks"
+
+dev_num_coprocessor:
+	.asciz	"Numeric coprocessor"
+
+dev_dma:
+	.asciz	"DMA"
+
+dev_msg_end:
+	.asciz	" detected\n\r"
 
 . = _start + 510
 .byte	0x55, 0xAA
