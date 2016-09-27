@@ -1,5 +1,5 @@
-.globl	_start
-.text
+.globl		_start
+.section	.text
 
 _start:
 .code16
@@ -28,12 +28,6 @@ clear_screen:
 	pushl	%ebp
 	movl	%esp, %ebp
 
-	#Protegar reistradores
-	pushl 	%eax
-	pushl 	%ebx
-	pushl 	%ecx
-	pushl 	%edx
-
 	#Limpar tela
 	movb	$0x07, %ah #Codigo de scroll down
 	movb	$0x00, %al #Todas as linhas
@@ -51,13 +45,42 @@ clear_screen:
     movb    $0x00, %bh #Numero da pagina
 	int 	$0x10 #Codigo de interrupcao de tela
 
-	#Resetar registradores
-    popl	%edx
-    popl	%ecx
-    popl	%ebx
-    popl	%eax
+    #Resetar ebp e esp
+    movl	%ebp, %esp
+	pop 	%ebp
+	ret
 
-    #Resetar ebp
+.globl		print_string
+.type		print_string, @function
+print_string:
+	#Proteger ebp
+	pushl	%ebp
+	movl	%esp, %ebp
+
+	#Pegar e empilhar argumentos para a funcao
+	movl	6(%ebp), %eax
+	pushl	%eax
+
+	#Ler argumentos e guardar nos registradores
+	movl	-4(%ebp), %edx
+
+	#Loop de impressao
+	loop_print_string:
+		movb	(%edx), %al
+		cmpb	$0, %al
+		je   	loop_print_string_end
+
+		pushl	%edx
+		movb	$0x0E, %ah #Codigo de impressao de caractere
+		int 	$0x10 #Codigo de interrupcao de tela
+		popl	%edx
+
+		inc		%edx
+		jmp 	loop_print_string
+	loop_print_string_end:
+
+    #Resetar ebp e esp
+    movl	%ebp, %esp
 	pop 	%ebp
 	ret
 
@@ -69,18 +92,34 @@ start:
 		cmp		$'1', %al #Compara o caractere lido com '1'
 		je		clear
 		
+		cmp		$'2', %al #Compara o caractere lido com '2'
+		je		string
+
 		movb	$0x0E, %ah #Codigo de impressao de caractere
 		int 	$0x10 #Codigo de interrupcao de tela
 		jmp		loop_read_write
 
 		clear:
-			call clear_screen
+			pushl	%eax
+			call 	clear_screen
+			popl	%eax
+			jmp		loop_read_write
+
+		string:
+			pushl	%eax
+			call	clear_screen
+			pushl	$version_msg
+			call 	print_string
+			popl	%eax
 			jmp		loop_read_write
 
 	jmp		halt
 
 halt:	
 	jmp		halt
-	
+
+version_msg:
+	.asciz	"S.O.S - Superior Operating System - Bootloader Alpha Version 0.0.1"
+
 . = _start + 510
 .byte	0x55, 0xAA
