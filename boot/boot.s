@@ -1,12 +1,12 @@
-.globl		_start
-
 .section	.text
+
+.globl		_start
 _start:
 .code16
 	#Parar interrupcoes
 	cli
 	
-	#Zzerar registradores
+	#Zerar registradores
 	xorl	%eax, %eax
 	movl	%eax, %ebx
 	movl	%eax, %ecx
@@ -26,6 +26,7 @@ _start:
 clear_screen:
 	#Proteger ebp
 	pushl	%ebp
+	#Setar ebp para o inicio da stack dessa funcao
 	movl	%esp, %ebp
 
 	#Limpar tela
@@ -124,6 +125,7 @@ print_devices:
 print_string:
 	#Proteger ebp
 	pushl	%ebp
+	#Setar ebp para o inicio da stack dessa funcao
 	movl	%esp, %ebp
 
 	#Pegar e empilhar argumentos para a funcao
@@ -135,16 +137,16 @@ print_string:
 
 	#Loop de impressao
 	loop_print_string:
-		movb	(%edx), %al
-		cmpb	$0, %al
+		movb	(%edx), %al #Colocar o caractere atual da string no registrador
+		cmpb	$0, %al #Comparar para ver se ja chegou no final
 		je   	loop_print_string_end
 
-		pushl	%edx
+		pushl	%edx #Proteger edx
 		movb	$0x0E, %ah #Codigo de impressao de caractere
 		int 	$0x10 #Codigo de interrupcao de tela
-		popl	%edx
+		popl	%edx #Pegar edx de volta
 
-		inc	%edx
+		inc	%edx #Proximo caractere da string
 		jmp 	loop_print_string
 	loop_print_string_end:
 
@@ -153,6 +155,7 @@ print_string:
 	popl 	%ebp
 	ret
 
+.globl		start
 start:
 	loop_read_write:
 		movb	$0x00, %ah #Codigo de leitra de caractere
@@ -166,6 +169,9 @@ start:
 
 		cmp	$'3', %al
 		je	devices
+
+		cmp	$'4', %al #Compara o caractere lido com '4'
+		je	reboot
 
 		movb	$0x0E, %ah #Codigo de impressao de caractere
 		int 	$0x10 #Codigo de interrupcao de tela
@@ -188,6 +194,11 @@ start:
 		devices:
 			call	print_devices
 			jmp	loop_read_write
+
+		reboot:
+			cli
+			call	clear_screen
+			int 	$0x19
 
 	jmp	halt
 
