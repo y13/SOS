@@ -81,7 +81,7 @@ print_string:
 
 	#Resetar ebp e esp
 	movl	%ebp, %esp
-	pop 	%ebp
+	popl 	%ebp
 	ret
 
 start:
@@ -118,8 +118,12 @@ start:
 halt:	
 	jmp	halt
 
+
+newline:
+	.asciz	"\n\r"
+
 version_msg:
-	.asciz	"S.O.S - Superior Operating System 0.0.1"
+	.asciz	"S.O.S - Superior Operating System 0.0.1\n\r"
 
 . = _start + 510
 .byte	0x55, 0xAA
