@@ -6,7 +6,7 @@ _start:
 	#Parar interrupcoes
 	cli
 	
-	#Zzerar registradores
+	#Zerar registradores
 	xorl	%eax, %eax
 	movl	%eax, %ebx
 	movl	%eax, %ecx
@@ -26,6 +26,7 @@ _start:
 clear_screen:
 	#Proteger ebp
 	pushl	%ebp
+	#Setar ebp para o inicio da stack dessa funcao
 	movl	%esp, %ebp
 
 	#Limpar tela
@@ -55,6 +56,7 @@ clear_screen:
 print_string:
 	#Proteger ebp
 	pushl	%ebp
+	#Setar ebp para o inicio da stack dessa funcao
 	movl	%esp, %ebp
 
 	#Pegar e empilhar argumentos para a funcao
@@ -66,16 +68,16 @@ print_string:
 
 	#Loop de impressao
 	loop_print_string:
-		movb	(%edx), %al
-		cmpb	$0, %al
+		movb	(%edx), %al #Colocar o caractere atual da string no registrador
+		cmpb	$0, %al #Comparar para ver se ja chegou no final
 		je   	loop_print_string_end
 
-		pushl	%edx
+		pushl	%edx #Proteger edx
 		movb	$0x0E, %ah #Codigo de impressao de caractere
 		int 	$0x10 #Codigo de interrupcao de tela
-		popl	%edx
+		popl	%edx #Pegar edx de volta
 
-		inc		%edx
+		inc		%edx #Proximo caractere da string
 		jmp 	loop_print_string
 	loop_print_string_end:
 
@@ -95,6 +97,9 @@ start:
 		cmp		$'2', %al #Compara o caractere lido com '2'
 		je		string
 
+		cmp		$'4', %al #Compara o caractere lido com '4'
+		je		reboot
+
 		movb	$0x0E, %ah #Codigo de impressao de caractere
 		int 	$0x10 #Codigo de interrupcao de tela
 		jmp		loop_read_write
@@ -112,6 +117,11 @@ start:
 			call 	print_string
 			popl	%eax
 			jmp		loop_read_write
+
+		reboot:
+			cli
+			call	clear_screen
+			int 	$0x19
 
 	jmp		halt
 
