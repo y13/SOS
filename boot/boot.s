@@ -52,8 +52,77 @@ clear_screen:
 	pop 	%ebp
 	ret
 
-.globl		print_string
-.type		print_string, @function
+.globl	print_devices
+.type	print_devices, @function
+print_devices:
+	pushl	%ebp
+	movl	%esp, %ebp
+
+	int	$0x11
+
+	movl	%eax, -4(%ebp)
+
+
+	andl	$0x0002, %eax
+	cmp	$0, %eax
+	je	print_devices_no_num_cop
+
+	pushl	$dev_num_coprocessor
+	call	print_string
+	popl	%edx
+
+	pushl	$dev_msg_end
+	call	print_string
+	popl	%edx
+
+
+	print_devices_no_num_cop:
+
+	movl	-4(%ebp), %eax
+	andl	$0x0100, %eax
+	cmp	$0, %eax
+	je	print_devices_no_dma
+
+	pushl	$dev_dma
+	call	print_string
+	popl	%edx
+
+	pushl	$dev_msg_end
+	call	print_string
+	popl	%edx
+
+
+	print_devices_no_dma:
+
+	movl	-4(%ebp), %eax
+	andl	$0x000D, %eax # número de bancos de memórias
+	shr	$2, %eax
+
+	addb	$'0', %al
+	movb	$0xE, %ah
+	movb	$7, %bl
+
+	int	$0x10
+
+
+	pushl	$dev_memory
+	call	print_string
+	popl	%edx
+
+	pushl	$dev_msg_end
+	call	print_string
+	popl	%edx
+
+	pushl	$newline
+	call	print_string
+	popl	%edx
+
+	movl	%ebp, %esp
+	popl	%ebp
+	ret
+
+.globl	print_string
+.type	print_string, @function
 print_string:
 	#Protect ebp
 	pushl	%ebp
@@ -84,7 +153,7 @@ print_string:
 
 	#Reset ebp and esp
 	movl	%ebp, %esp
-	pop 	%ebp
+	popl 	%ebp
 	ret
 
 .globl		start
@@ -99,8 +168,11 @@ start:
 		cmp	$'2', %al
 		je	string
 
-		cmp		$'4', %al
-		je		reboot
+		cmp	$'3', %al
+		je	devices
+
+		cmp	$'4', %al #Compara o caractere lido com '4'
+		je	reboot
 
 		movb	$0x0E, %ah #Put-char code
 		int 	$0x10 #Screen-interrupt code
@@ -120,18 +192,39 @@ start:
 			popl	%eax
 			jmp	loop_read_write
 
+		devices:
+			call	print_devices
+			jmp	loop_read_write
+
 		reboot:
 			cli
 			call	clear_screen
 			int 	$0x19
 
-	jmp		halt
+	jmp	halt
 
 halt:	
 	jmp	halt
 
+
+newline:
+	.asciz	"\n\r"
+
 version_msg:
-	.asciz	"S.O.S - Superior Operating System 0.0.1"
+	.asciz	"S.O.S - Superior Operating System 0.0.1\n\r"
+
+
+dev_memory:
+	.asciz	" x 64K RAM banks"
+
+dev_num_coprocessor:
+	.asciz	"Numeric coprocessor"
+
+dev_dma:
+	.asciz	"DMA"
+
+dev_msg_end:
+	.asciz	" detected\n\r"
 
 . = _start + 510
 .byte	0x55, 0xAA
