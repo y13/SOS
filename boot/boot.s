@@ -5,7 +5,7 @@ _start:
 .code16
 	#Stop interrupts
 	cli
-	
+
 	#Set registers to 0
 	xorl	%eax, %eax
 	movl	%eax, %ebx
@@ -30,7 +30,7 @@ clear_screen:
 	#Set ebp to the base of the function's stack
 	movl	%esp, %ebp
 
-	#Clean screen
+	#Clear screen
 	movb	$0x07, %ah #Scroll-down code
 	movb	$0x00, %al #Scroll down all lines
 	movb	$0x07, %bh #Overwrite with blank spaces
@@ -52,8 +52,8 @@ clear_screen:
 	pop 	%ebp
 	ret
 
-.globl	print_devices
-.type	print_devices, @function
+.globl		print_devices
+.type		print_devices, @function
 print_devices:
 	pushl	%ebp
 	movl	%esp, %ebp
@@ -61,7 +61,6 @@ print_devices:
 	int	$0x11
 
 	movl	%eax, -4(%ebp)
-
 
 	andl	$0x0002, %eax
 	cmp	$0, %eax
@@ -121,8 +120,8 @@ print_devices:
 	popl	%ebp
 	ret
 
-.globl	print_string
-.type	print_string, @function
+.globl		print_string
+.type		print_string, @function
 print_string:
 	#Protect ebp
 	pushl	%ebp
@@ -147,7 +146,7 @@ print_string:
 		int 	$0x10 #Screen-interrupt code
 		popl	%edx #Reset edx
 
-		inc		%edx #Get string's next char
+		inc	%edx #Get string's next char
 		jmp 	loop_print_string
 	loop_print_string_end:
 
@@ -160,7 +159,7 @@ print_string:
 start:
 	loop_read_write:
 		movb	$0x00, %ah #Read-char code
-		int 	$0x16 #Screen-interrupt code
+		int 	$0x16 #Keyboard-interrupt code
 		
 		cmp	$'1', %al
 		je	clear
@@ -171,7 +170,7 @@ start:
 		cmp	$'3', %al
 		je	devices
 
-		cmp	$'4', %al #Compara o caractere lido com '4'
+		cmp	$'4', %al
 		je	reboot
 
 		movb	$0x0E, %ah #Put-char code
@@ -179,17 +178,13 @@ start:
 		jmp	loop_read_write
 
 		clear:
-			pushl	%eax
 			call 	clear_screen
-			popl	%eax
 			jmp	loop_read_write
 
 		string:
-			pushl	%eax
-			call	clear_screen
-			pushl	$version_msg
+			pushl	$version_msg #Push argument
 			call 	print_string
-			popl	%eax
+			addl	$4, %esp #Pop argument
 			jmp	loop_read_write
 
 		devices:
@@ -197,9 +192,8 @@ start:
 			jmp	loop_read_write
 
 		reboot:
-			cli
 			call	clear_screen
-			int 	$0x19
+			int 	$0x19 #Reboot interrupt
 
 	jmp	halt
 
@@ -211,7 +205,7 @@ newline:
 	.asciz	"\n\r"
 
 version_msg:
-	.asciz	"S.O.S - Superior Operating System 0.0.1\n\r"
+	.asciz	"S.O.S - Superior Operating System\n\rBootloader Alpha Version 0.0.1\n\n\r"
 
 
 dev_memory:
