@@ -1,6 +1,6 @@
-.globl		_start
-
 .section	.text
+
+.globl		_start
 _start:
 .code16
 	#Parar interrupcoes
@@ -86,6 +86,7 @@ print_string:
 	pop 	%ebp
 	ret
 
+.globl		start
 start:
 	loop_read_write:
 		movb	$0x00, %ah #Codigo de leitra de caractere
