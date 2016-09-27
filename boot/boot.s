@@ -119,7 +119,7 @@ halt:
 	jmp	halt
 
 version_msg:
-	.asciz	"S.O.S - Superior Operating System - Bootloader Alpha Version 0.0.1"
+	.asciz	"S.O.S - Superior Operating System 0.0.1"
 
 . = _start + 510
 .byte	0x55, 0xAA
