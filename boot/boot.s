@@ -70,7 +70,7 @@ print_devices:
 	call	print_string
 	popl	%edx
 
-	pushl	$dev_msg_end
+	pushl	$detected_msg
 	call	print_string
 	popl	%edx
 
@@ -86,7 +86,7 @@ print_devices:
 	call	print_string
 	popl	%edx
 
-	pushl	$dev_msg_end
+	pushl	$detected_msg
 	call	print_string
 	popl	%edx
 
@@ -108,7 +108,7 @@ print_devices:
 	call	print_string
 	popl	%edx
 
-	pushl	$dev_msg_end
+	pushl	$detected_msg
 	call	print_string
 	popl	%edx
 
@@ -119,6 +119,28 @@ print_devices:
 	movl	%ebp, %esp
 	popl	%ebp
 	ret
+
+.globl	print_mem
+.type	print_mem, @function
+print_mem:
+	xor	%eax, %eax	# Clear upper word
+
+	int	$0x12
+
+	push	%eax
+	call	print_hex
+	pop	%eax
+
+	pushl	$memory
+	call	print_string
+	pop	%eax
+
+	pushl	$detected_msg
+	call	print_string
+	pop	%eax
+
+	ret
+
 
 .globl	print_hex
 .type	print_hex, @function
@@ -252,6 +274,7 @@ start:
 			int 	$0x19 #Reboot interrupt
 
 		hex:
+			call	print_mem
 			jmp	loop_read_write
 
 	jmp	halt
@@ -275,7 +298,10 @@ dev_num_coprocessor:
 dev_dma:
 	.asciz	"DMA"
 
-dev_msg_end:
+memory:
+	.asciz	" KB of RAM"
+
+detected_msg:
 	.asciz	" detected\n\r"
 
 . = _start + 510
