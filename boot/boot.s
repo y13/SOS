@@ -210,7 +210,7 @@ newline:
 	.asciz	"\n\r"
 
 version_msg:
-	.asciz	"S.O.S - Superior Operating System 0.0.1\n\r"
+	.asciz	"S.O.S v0.0.1\n\r"
 
 
 dev_memory:
