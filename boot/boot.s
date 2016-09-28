@@ -7,117 +7,120 @@ _start:
 	cli
 
 	# Set registers to 0
-	xorl	%eax, %eax
-	movl	%eax, %ebx
-	movl	%eax, %ecx
-	movl	%eax, %edx
-	movl	%eax, %ds
-	movl	%eax, %es
-	movl	%eax, %fs
-	movl	%eax, %gs
-	movl	%eax, %ss
+	xor	%eax, %eax
+	mov	%eax, %ebx
+	mov	%eax, %ecx
+	mov	%eax, %edx
+	mov	%eax, %ds
+	mov	%eax, %es
+	mov	%eax, %fs
+	mov	%eax, %gs
+	mov	%eax, %ss
 	
 	# Restart interrupts
 	sti
 	# Jump to main function
 	jmp	start
 
-.globl		clear_screen
-.type		clear_screen, @function
+
+.globl	clear_screen
+.type	clear_screen, @function
 clear_screen:
 	# Protect ebp
-	pushl	%ebp
+	push	%ebp
 	# Set ebp to the base of the function's stack
-	movl	%esp, %ebp
+	mov	%esp, %ebp
 
 	# Clear screen
-	movb	$0x07, %ah 	# Scroll-down code
-	movb	$0x00, %al 	# Scroll down all lines
-	movb	$0x07, %bh 	# Overwrite with blank spaces
-	movb 	$0x00, %ch 	# New page starts at line 0
-	movb 	$0x00, %cl 	# New page starts at collum 0
-	movb 	$0x18, %dh 	# New page starts goes up to line 0 0x18
-	movb 	$0x4F, %dl 	# New page starts goes up to collum 0x4F
-	int 	$0x10 	# Screen-interrupt code
+	mov	$0x07, %ah	# Scroll-down code
+	mov	$0x00, %al	# Scroll down all lines
+	mov	$0x07, %bh	# Overwrite with blank spaces
+	mov	$0x00, %ch	# New page starts at line 0
+	mov	$0x00, %cl	# New page starts at collum 0
+	mov	$0x18, %dh	# New page starts goes up to line 0 0x18
+	mov	$0x4F, %dl	# New page starts goes up to collum 0x4F
+	int	$0x10	# Screen-interrupt code
 
 	# Set cursor to (0,0)
-	movb	$0x02, %ah 	# Set-cursor code
-	movb 	$0x00, %dh 	# Set to line 0
-	movb 	$0x00, %dl 	# set to collum 0
-	movb	$0x00, %bh 	# Pages's number
-	int 	$0x10 	# Screen-interrupt code
+	mov	$0x02, %ah	# Set-cursor code
+	mov	$0x00, %dh	# Set to line 0
+	mov	$0x00, %dl	# set to collum 0
+	mov	$0x00, %bh	# Pages's number
+	int	$0x10	# Screen-interrupt code
 
 	# Reset ebp and esp
-	movl	%ebp, %esp
-	pop 	%ebp
+	mov	%ebp, %esp
+	pop	%ebp
 	ret
+
 
 .globl		print_devices
 .type		print_devices, @function
 print_devices:
-	pushl	%ebp
-	movl	%esp, %ebp
+	push	%ebp
+	mov	%esp, %ebp
 
 	int	$0x11
 
-	movl	%eax, -4(%ebp)	# Protect interruption return
+	mov	%eax, -4(%ebp)	# Protect interruption return
 
-	andl	$0x0002, %eax	# Numeric coprocessor bitmask
+	and	$0x0002, %eax	# Numeric coprocessor bitmask
 	cmp	$0, %eax
 	je	print_devices_no_num_cop
 
 	pushl	$dev_num_coprocessor
 	call	print_string
-	popl	%edx
+	pop	%edx
 
 	pushl	$detected_msg
 	call	print_string
-	popl	%edx
+	pop	%edx
 
 
 	print_devices_no_num_cop:
 
 	movl	-4(%ebp), %eax	# Restore interruption return into eax
-	andl	$0x0100, %eax	# DMA bitmask
+	and	$0x0100, %eax	# DMA bitmask
 	cmp	$0, %eax
 	je	print_devices_no_dma
 
 	pushl	$dev_dma
 	call	print_string
-	popl	%edx
+	pop	%edx
 
 	pushl	$detected_msg
 	call	print_string
-	popl	%edx
+	pop	%edx
 
 
 	print_devices_no_dma:
 
 	movl	-4(%ebp), %eax
-	andl	$0x000D, %eax	# Number of 64K memory banks bitmask
+	and	$0x000D, %eax	# Number of 64K memory banks bitmask
 	shr	$2, %eax		# Remove trailing zeroes
 
 	addb	$'0', %al		# Get corresponding character to the number obtained
-	movb	$0xE, %ah
-	movb	$7, %bl
+	mov	$0xE, %ah
+	mov	$7, %bl
 
 	int	$0x10
 
 	pushl	$dev_memory
 	call	print_string
-	popl	%edx
+	pop	%edx
 
 	pushl	$detected_msg
 	call	print_string
-	popl	%edx
+	pop	%edx
 
 	pushl	$newline
 	call	print_string
-	popl	%edx
+	pop	%edx
 
 	movl	%ebp, %esp
-	popl	%ebp
+	pop	%ebp
 	ret
+
 
 .globl	print_mem
 .type	print_mem, @function
@@ -195,43 +198,44 @@ print_hex:
 
 print_string:
 	# Protect ebp
-	pushl	%ebp
+	push	%ebp
 
 	# Set ebp to the base of the function's stack
-	movl	%esp, %ebp
+	mov	%esp, %ebp
 
 	# Fetch and push arguments to the functions's stack
 	movl	6(%ebp), %eax
-	pushl	%eax
+	push	%eax
 
 	# Read pushed arguments and store it on edx
 	movl	-4(%ebp), %edx
 
 	# Print loop
 	loop_print_string:
-		movb	(%edx), %al # Put string's current char in register
-		cmpb	$0, %al	# Compare current char to '\0'
-		je   	loop_print_string_end
+		mov	(%edx), %al # Put string's current char in register
+		cmp	$0, %al	# Compare current char to '\0'
+		je	loop_print_string_end
 
-		pushl	%edx	# Protect edx
-		movb	$0x0E, %ah	# Put-char code
-		int 	$0x10	# Screen-interrupt code
-		popl	%edx	# Reset edx
+		push	%edx	# Protect edx
+		mov	$0x0E, %ah	# Put-char code
+		int	$0x10	# Screen-interrupt code
+		pop	%edx	# Reset edx
 
 		inc	%edx	# Get string's next char
-		jmp 	loop_print_string
+		jmp	loop_print_string
+
 	loop_print_string_end:
 
 	# Reset ebp and esp
-	movl	%ebp, %esp
-	popl 	%ebp
+	mov	%ebp, %esp
+	pop	%ebp
 	ret
 
 .globl		start
 start:
 	loop_read_write:
-		movb	$0x00, %ah	# Read-char code
-		int 	$0x16	# Keyboard-interrupt code
+		mov	$0x00, %ah	# Read-char code
+		int	$0x16	# Keyboard-interrupt code
 		
 		cmp	$'1', %al
 		je	clear
@@ -248,19 +252,19 @@ start:
 		cmp	$'5', %al
 		je	hex
 
-		movb	$0x0E, %ah	# Put-char code
-		int 	$0x10	# Screen-interrupt code
+		mov	$0x0E, %ah	# Put-char code
+		int	$0x10	# Screen-interrupt code
 
 		jmp	loop_read_write
 
 		clear:
-			call 	clear_screen
+			call	clear_screen
 			jmp	loop_read_write
 
 		string:
 			pushl	$version_msg	# Push argument
-			call 	print_string
-			addl	$4, %esp		# Pop argument
+			call	print_string
+			add	$4, %esp		# Pop argument
 			jmp	loop_read_write
 
 		devices:
@@ -269,7 +273,7 @@ start:
 
 		reboot:
 			call	clear_screen
-			int 	$0x19		# Reboot interrupt
+			int	$0x19		# Reboot interrupt
 
 		hex:
 			call	print_mem
