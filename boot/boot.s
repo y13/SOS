@@ -1,6 +1,6 @@
 .section	.text
 
-.globl		_start
+.globl	_start
 _start:
 .code16
 	# Stop interrupts
@@ -54,8 +54,8 @@ clear_screen:
 	ret
 
 
-.globl		print_devices
-.type		print_devices, @function
+.globl	print_devices
+.type	print_devices, @function
 print_devices:
 	push	%ebp
 	mov	%esp, %ebp
@@ -231,7 +231,7 @@ print_string:
 	pop	%ebp
 	ret
 
-.globl		start
+.globl	start
 start:
 	loop_read_write:
 		mov	$0x00, %ah	# Read-char code
@@ -264,7 +264,7 @@ start:
 		string:
 			pushl	$version_msg	# Push argument
 			call	print_string
-			add	$4, %esp		# Pop argument
+			pop	%edx
 			jmp	loop_read_write
 
 		devices:
