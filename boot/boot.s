@@ -120,6 +120,57 @@ print_devices:
 	popl	%ebp
 	ret
 
+.globl	print_hex
+.type	print_hex, @function
+print_hex:
+	push	%ebp
+	mov	%esp, %ebp
+
+	mov	6(%ebp), %edx	# número a ser convertido
+
+	mov	$0xE, %ah
+	xor	%bh, %bh
+	mov	$7, %bl
+
+	mov	$'0', %al
+	int	$0x10
+
+	mov	$'x', %al
+	int	$0x10
+
+	xor	%ecx, %ecx
+	mov	$32, %cl # único registador que pode fazer shift em outros (???????)
+
+	print_hex_loop:
+		sub	$4, %cl
+
+		mov	%edx, %eax
+		shr	%cl, %eax
+		and	$0xF, %al
+
+		cmp	$9, %al
+		jg	print_hex_letter
+		#jle	print_hex_letter
+
+		add	$'0', %al
+		jmp	print_hex_cont
+
+		print_hex_letter:
+		sub	$10, %al
+		add	$'A', %al
+
+		print_hex_cont:
+
+		mov	$0xE, %ah
+		int	$0x10
+
+		cmp	$0, %cl
+		jne	print_hex_loop
+
+	mov	%ebp, %esp
+	pop	%ebp
+	ret
+
 .globl	print_string
 .type	print_string, @function
 print_string:
@@ -173,6 +224,9 @@ start:
 		cmp	$'4', %al #Compara o caractere lido com '4'
 		je	reboot
 
+		cmp	$'5', %al
+		je	hex
+
 		movb	$0x0E, %ah #Codigo de impressao de caractere
 		int 	$0x10 #Codigo de interrupcao de tela
 		jmp	loop_read_write
@@ -199,6 +253,9 @@ start:
 			cli
 			call	clear_screen
 			int 	$0x19
+
+		hex:
+			jmp	loop_read_write
 
 	jmp	halt
 
