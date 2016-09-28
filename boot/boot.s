@@ -3,10 +3,10 @@
 .globl		_start
 _start:
 .code16
-	#Parar interrupcoes
+	#Stop interrupts
 	cli
-	
-	#Zerar registradores
+
+	#Set registers to 0
 	xorl	%eax, %eax
 	movl	%eax, %ebx
 	movl	%eax, %ecx
@@ -17,42 +17,43 @@ _start:
 	movl	%eax, %gs
 	movl	%eax, %ss
 	
-	#Voltar interrupcoes
+	#Restart interrupts
 	sti
+	#Jump to main function
 	jmp	start
 
 .globl		clear_screen
 .type		clear_screen, @function
 clear_screen:
-	#Proteger ebp
+	#Protect ebp
 	pushl	%ebp
-	#Setar ebp para o inicio da stack dessa funcao
+	#Set ebp to the base of the function's stack
 	movl	%esp, %ebp
 
-	#Limpar tela
-	movb	$0x07, %ah #Codigo de scroll down
-	movb	$0x00, %al #Todas as linhas
-	movb	$0x07, %bh #Sobrepor com branco
-	movb 	$0x00, %ch #Nova pagina comeca na linha 0
-	movb 	$0x00, %cl #Nova pagina comeca na coluna 0
-	movb 	$0x18, %dh #Nova pagina vai ate a linha 0x18
-	movb 	$0x4F, %dl #Nova pagina vai ate a linha 0x4F
-	int 	$0x10 #Codigo de interrupcao de tela
+	#Clear screen
+	movb	$0x07, %ah #Scroll-down code
+	movb	$0x00, %al #Scroll down all lines
+	movb	$0x07, %bh #Overwrite with blank spaces
+	movb 	$0x00, %ch #New page starts at line 0
+	movb 	$0x00, %cl #New page starts at collum 0
+	movb 	$0x18, %dh #New page starts goes up to line 0 0x18
+	movb 	$0x4F, %dl #New page starts goes up to collum 0x4F
+	int 	$0x10 #Screen-interrupt code
 
-	#Setar cursor para o comeco 
-	movb	$0x02, %ah #Codigo de setar cursor
-	movb 	$0x00, %dh #Linha a setar
-	movb 	$0x00, %dl #Coluna a setar
-	movb	$0x00, %bh #Numero da pagina
-	int 	$0x10 #Codigo de interrupcao de tela
+	#Set cursor to (0,0)
+	movb	$0x02, %ah #Set-cursor code
+	movb 	$0x00, %dh #Set to line 0
+	movb 	$0x00, %dl #set to collum 0
+	movb	$0x00, %bh #Pages's number
+	int 	$0x10 #Screen-interrupt code
 
-	#Resetar ebp e esp
+	#Reset ebp and esp
 	movl	%ebp, %esp
 	pop 	%ebp
 	ret
 
-.globl	print_devices
-.type	print_devices, @function
+.globl		print_devices
+.type		print_devices, @function
 print_devices:
 	pushl	%ebp
 	movl	%esp, %ebp
@@ -60,7 +61,6 @@ print_devices:
 	int	$0x11
 
 	movl	%eax, -4(%ebp)
-
 
 	andl	$0x0002, %eax
 	cmp	$0, %eax
@@ -173,35 +173,36 @@ print_hex:
 
 .globl	print_string
 .type	print_string, @function
+
 print_string:
-	#Proteger ebp
+	#Protect ebp
 	pushl	%ebp
-	#Setar ebp para o inicio da stack dessa funcao
+	#Set ebp to the base of the function's stack
 	movl	%esp, %ebp
 
-	#Pegar e empilhar argumentos para a funcao
+	#Fetch and push arguments to the functions's stack
 	movl	6(%ebp), %eax
 	pushl	%eax
 
-	#Ler argumentos e guardar nos registradores
+	#Read pushed arguments and store it on edx
 	movl	-4(%ebp), %edx
 
-	#Loop de impressao
+	#Print loop
 	loop_print_string:
-		movb	(%edx), %al #Colocar o caractere atual da string no registrador
-		cmpb	$0, %al #Comparar para ver se ja chegou no final
+		movb	(%edx), %al #Put string's current char in register
+		cmpb	$0, %al #Compare current char to '\0'
 		je   	loop_print_string_end
 
-		pushl	%edx #Proteger edx
-		movb	$0x0E, %ah #Codigo de impressao de caractere
-		int 	$0x10 #Codigo de interrupcao de tela
-		popl	%edx #Pegar edx de volta
+		pushl	%edx #Protect edx
+		movb	$0x0E, %ah #Put-char code
+		int 	$0x10 #Screen-interrupt code
+		popl	%edx #Reset edx
 
-		inc	%edx #Proximo caractere da string
+		inc	%edx #Get string's next char
 		jmp 	loop_print_string
 	loop_print_string_end:
 
-	#Resetar ebp e esp
+	#Reset ebp and esp
 	movl	%ebp, %esp
 	popl 	%ebp
 	ret
@@ -209,40 +210,37 @@ print_string:
 .globl		start
 start:
 	loop_read_write:
-		movb	$0x00, %ah #Codigo de leitra de caractere
-		int 	$0x16 #Codigo de interrupcao do teclado
+		movb	$0x00, %ah #Read-char code
+		int 	$0x16 #Keyboard-interrupt code
 		
-		cmp	$'1', %al #Compara o caractere lido com '1'
+		cmp	$'1', %al
 		je	clear
 		
-		cmp	$'2', %al #Compara o caractere lido com '2'
+		cmp	$'2', %al
 		je	string
 
 		cmp	$'3', %al
 		je	devices
 
-		cmp	$'4', %al #Compara o caractere lido com '4'
+		cmp	$'4', %al
 		je	reboot
 
 		cmp	$'5', %al
 		je	hex
 
-		movb	$0x0E, %ah #Codigo de impressao de caractere
-		int 	$0x10 #Codigo de interrupcao de tela
+		movb	$0x0E, %ah #Put-char code
+		int 	$0x10 #Screen-interrupt code
+
 		jmp	loop_read_write
 
 		clear:
-			pushl	%eax
 			call 	clear_screen
-			popl	%eax
 			jmp	loop_read_write
 
 		string:
-			pushl	%eax
-			call	clear_screen
-			pushl	$version_msg
+			pushl	$version_msg #Push argument
 			call 	print_string
-			popl	%eax
+			addl	$4, %esp #Pop argument
 			jmp	loop_read_write
 
 		devices:
@@ -250,9 +248,8 @@ start:
 			jmp	loop_read_write
 
 		reboot:
-			cli
 			call	clear_screen
-			int 	$0x19
+			int 	$0x19 #Reboot interrupt
 
 		hex:
 			jmp	loop_read_write
@@ -268,7 +265,6 @@ newline:
 
 version_msg:
 	.asciz	"S.O.S v0.0.1\n\r"
-
 
 dev_memory:
 	.asciz	" x 64K RAM banks"
