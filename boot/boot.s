@@ -113,10 +113,6 @@ print_devices:
 	call	print_string
 	pop	%edx
 
-	pushl	$newline
-	call	print_string
-	pop	%edx
-
 	movl	%ebp, %esp
 	pop	%ebp
 	ret
